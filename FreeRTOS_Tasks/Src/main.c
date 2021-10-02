@@ -39,7 +39,14 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+struct printArgs{
+  char *printStr;
+  unsigned char xStart;
+  unsigned char yStart;
+  int direction;
+};
 
+struct printArgs args[3] = {{"Task 1 ",18,0, 1},{"Task 2", 18, 2, 0},{"Task 3", 18, 4, 1}};
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -51,13 +58,40 @@ osThreadId taskHandle[3];
 void printLCDTask(void const *argument)
 {
   //Nokia5110_SetCursor(hspi1.Instance,0,5);
+  struct printArgs *arg = (struct printArgs *)argument;
+  int direction = arg->direction;
+  char *emptyStr = "      ";
   for(;;)
   {
-
-	Clear_Display(hspi1.Instance);
-	Nokia5110_SetCursor(hspi1.Instance, 18,0);
-	Nokia5110_OutString(hspi1.Instance,"Task 1");
-    osDelay(500);
+	//Clear_Display(hspi1.Instance);
+	if(direction)
+	{
+	  Nokia5110_SetCursor(hspi1.Instance, arg->xStart,arg->yStart);
+	  Nokia5110_OutString(hspi1.Instance, arg->printStr);
+	  osDelay(150);
+	  Nokia5110_SetCursor(hspi1.Instance, arg->xStart,arg->yStart);
+	  Nokia5110_OutString(hspi1.Instance, emptyStr);
+	  osDelay(50);
+	  arg->xStart += 2;
+	  if(arg->xStart == 36)
+	  {
+	    direction = 0;
+	  }
+	}
+	else
+	{
+	  Nokia5110_SetCursor(hspi1.Instance, arg->xStart,arg->yStart);
+	  Nokia5110_OutString(hspi1.Instance, arg->printStr);
+	  osDelay(150);
+	  Nokia5110_SetCursor(hspi1.Instance, arg->xStart,arg->yStart);
+	  Nokia5110_OutString(hspi1.Instance, emptyStr);
+      osDelay(50);
+	  arg->xStart -= 2;
+	  if(arg->xStart == 0)
+	  {
+	    direction = 1;
+	  }
+	}
   }
 }
 /* USER CODE END PV */
@@ -74,7 +108,6 @@ void StartDefaultTask(void const * argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
 
 /**
@@ -84,7 +117,6 @@ void StartDefaultTask(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -135,7 +167,9 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  xTaskCreate(printLCDTask, "Task 1", 128, NULL, 2, NULL);
+  xTaskCreate(printLCDTask, "Task 1", 128, &args[0], 2, NULL);
+  xTaskCreate(printLCDTask, "Task 2", 128, &args[1], 2, NULL);
+  xTaskCreate(printLCDTask, "Task 3", 128, &args[2], 2, NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
